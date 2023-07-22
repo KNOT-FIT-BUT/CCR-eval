@@ -1,0 +1,32 @@
+# Directories
+models/
+dareczech/
+__pycache__/
+bin/
+include/
+lib/
+lib64
+share/
+
+# Config files
+pyvenv.cfg
+
+# Data directories
+!dareczech/.gitkeep
+!models/.gitkeep
+
+# Data files
+dareczech/*
+*.tsv
+*.txt
+
+# Testing scripts
+test*.py
+
+# Keep
+!requirements.txt
+!.gitignore
+!README.md
+
+
+
