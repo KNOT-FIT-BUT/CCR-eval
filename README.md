@@ -1,4 +1,4 @@
-#CzechDocLemm-BM25
+# CzechDocLemm-BM25
 
 Process, analyze and index a dataset of documents in the Czech language. The core functionality of this project centers around the BM25 model, a powerful ranking function commonly used in information retrieval systems. The BM25 model enables efficient indexing and scoring of the lemmatized documents, facilitating fast and accurate retrieval of relevant documents based on user queries.
 
