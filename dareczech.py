@@ -8,7 +8,7 @@ from tqdm import tqdm
 from lemmatize import Lemmatizer
 from dareczech_reg import DOC_TITLE_REG, DOC_URL_REG, DOC_BTE_REG
 
-logging.basicConfig(format='%(levelname)s: %(message)s')
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 def squash_doc_content(
         title:str,
@@ -56,9 +56,10 @@ if not input_path.endswith(".tsv"):
 output_path = os.path.basename(os.path.abspath(input_path))
 output_path = f"{OUT_DIR}/{os.path.splitext(output_path)[0]}.jsonl"
 
-logging.info("Loading model")
+logging.info("Loading model...")
 lemmatizer = Lemmatizer()
 lemmatizer.load_model()
+logging.info("loaded.")
 
 with open(input_path) as file_in, open(output_path, "w") as file_out:
     # Skip first line (tsv header)
