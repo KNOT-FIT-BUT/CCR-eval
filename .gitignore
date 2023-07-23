@@ -2,6 +2,7 @@
 models/
 dareczech/
 __pycache__/
+documents/
 bin/
 include/
 lib/
@@ -14,6 +15,7 @@ pyvenv.cfg
 # Data directories
 !dareczech/.gitkeep
 !models/.gitkeep
+!documents/.gitkeep
 
 # Data files
 dareczech/*
