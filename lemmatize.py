@@ -26,8 +26,8 @@ class Lemmatizer():
 
     LOAD_ERROR_STR = "Error while loading model"
 
-    def __init__(self, dict_path=MODEL_PATH):
-        self.MODEL_PATH = dict_path
+    def __init__(self, model_path=MODEL_PATH):
+        self.MODEL_PATH = model_path
 
         if not os.path.exists(self.MODEL_PATH):
             raise FileNotFoundError
