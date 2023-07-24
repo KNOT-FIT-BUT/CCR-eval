@@ -6,6 +6,7 @@ import re
 from tqdm import tqdm
 
 from lemmatize import Lemmatizer
+from lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
 from dareczech_reg import DOC_TITLE_REG, DOC_URL_REG, DOC_BTE_REG
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
@@ -56,10 +57,19 @@ if not input_path.endswith(".tsv"):
 output_path = os.path.basename(os.path.abspath(input_path))
 output_path = f"{OUT_DIR}/{os.path.splitext(output_path)[0]}.jsonl"
 
-logging.info("Loading model...")
 lemmatizer = Lemmatizer()
-lemmatizer.load_model()
-logging.info("loaded.")
+
+try:
+    logging.info("Loading model...")
+    lemmatizer.load_model()
+except FileNotFoundError:
+    logging.error("Morpho model not found.")
+    exit(1)
+except ModelLoadError:
+    logging.error("Error while loading czech morpho model.")
+    exit(1)
+
+logging.info("Model loaded successfully.")
 
 with open(input_path) as file_in, open(output_path, "w") as file_out:
     # Skip first line (tsv header)

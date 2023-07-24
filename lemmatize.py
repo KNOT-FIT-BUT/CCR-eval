@@ -29,10 +29,11 @@ class Lemmatizer():
     def __init__(self, model_path=MODEL_PATH):
         self.MODEL_PATH = model_path
 
-        if not os.path.exists(self.MODEL_PATH):
-            raise FileNotFoundError
 
     def load_model(self):
+        if not os.path.exists(self.MODEL_PATH):
+            raise FileNotFoundError
+        
         self.tagger = Tagger.load(self.MODEL_PATH)
         
         try:
