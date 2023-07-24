@@ -51,6 +51,8 @@ class Lemmatizer():
           
     
     def tokenize_text(self, text:str) -> Tokenizer:
+        '''Tokenizes the inputted text, returns instance of a Tokenzier()'''
+        
         tokenizer = self.tagger.newTokenizer()
 
         if tokenizer is None:
@@ -61,6 +63,8 @@ class Lemmatizer():
 
 
     def lemmatize_text(self, text:str) -> str:
+        '''Performs text tokenization and returns the inputted text in a lemmatized format'''
+
         if not self.MODEL_LOADED:
             raise ModelNotLoadedError
         
