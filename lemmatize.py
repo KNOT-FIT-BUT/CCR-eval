@@ -26,13 +26,14 @@ class Lemmatizer():
 
     LOAD_ERROR_STR = "Error while loading model"
 
-    def __init__(self, dict_path=MODEL_PATH):
-        self.MODEL_PATH = dict_path
+    def __init__(self, model_path=MODEL_PATH):
+        self.MODEL_PATH = model_path
 
-        if not os.path.exists(self.MODEL_PATH):
-            raise FileNotFoundError
 
     def load_model(self):
+        if not os.path.exists(self.MODEL_PATH):
+            raise FileNotFoundError
+        
         self.tagger = Tagger.load(self.MODEL_PATH)
         
         try:
@@ -50,6 +51,8 @@ class Lemmatizer():
           
     
     def tokenize_text(self, text:str) -> Tokenizer:
+        '''Tokenizes the inputted text, returns instance of a Tokenzier()'''
+        
         tokenizer = self.tagger.newTokenizer()
 
         if tokenizer is None:
@@ -60,6 +63,8 @@ class Lemmatizer():
 
 
     def lemmatize_text(self, text:str) -> str:
+        '''Performs text tokenization and returns the inputted text in a lemmatized format'''
+
         if not self.MODEL_LOADED:
             raise ModelNotLoadedError
         

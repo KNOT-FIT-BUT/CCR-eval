@@ -10,3 +10,12 @@ Process, analyze and index a dataset of documents in the Czech language. The cor
 
 2. **BM25 Indexing:** The project implements the BM25 ranking model to create an index of the lemmatized documents. This index significantly improves search performance and precision when querying the dataset.
 
+## Scripts
+
+### darezech.py
+Lemmatizes .tsv documents from the dareczech corpora using MorphoDiTa and converts them to a .jsonl format. 
+
+### fetch_czech_morph_model.sh
+Gets the latest morphological model (required by ufal.morphodita, used for docuemnt lemmatization) and stores it in models/ directory.
+
+
