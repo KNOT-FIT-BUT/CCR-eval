@@ -75,16 +75,25 @@ with open(input_path) as file_in, open(output_path, "w") as file_out:
     # Skip first line (tsv header)
     next(file_in)
 
+    converted_docs = []
+    skip_count = 0
+
     for line in tqdm(file_in, total=input_lines_num, desc="Processing", unit="line"):
         data = line.split("\t")
         
         id      = data[0]
         # query   = data[1]
-        # url     = data[2]
+        url     = data[2]
         doc     = data[3]
         title   = data[4]
         # label   = data[5]
 
+        if url in converted_docs:
+            skip_count += 1
+            continue
+
+        converted_docs.append(url)
+        
         doc_title   = re.search(DOC_TITLE_REG, doc).group(1)
         # doc_url     = re.search(DOC_URL_REG, doc).group(1)
         doc_bte     = re.search(DOC_BTE_REG, doc).group(1)
@@ -101,4 +110,4 @@ with open(input_path) as file_in, open(output_path, "w") as file_out:
         file_out.write(json.dumps(doc_json, ensure_ascii=False) + "\n")
 
 logging.info("Done")
-
+logging.info(f"Duplicate documents: {skip_count}")
