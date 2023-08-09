@@ -94,7 +94,7 @@ with open(input_path) as file_in, open(output_path, "w") as file_out:
     # Skip first line (tsv header)
     next(file_in)
 
-    converted_docs = []
+    converted_docs = set()
     skip_count = 0
 
     for line in tqdm(file_in, total=input_lines_num, desc="Processing", unit="line"):
@@ -107,11 +107,12 @@ with open(input_path) as file_in, open(output_path, "w") as file_out:
         title   = data[4]
         # label   = data[5]
 
+        
         if url in converted_docs:
             skip_count += 1
             continue
 
-        converted_docs.append(url)
+        converted_docs.add(url)
         
         doc_title   = re.search(DOC_TITLE_REG, doc).group(1)
         # doc_url     = re.search(DOC_URL_REG, doc).group(1)
