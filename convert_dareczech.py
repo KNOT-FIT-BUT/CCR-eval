@@ -1,3 +1,22 @@
+#! /usr/bin/python3
+
+"""
+Author: Jakub Stetina
+Email: xsteti05@stud.fit.vutbr.cz
+Description: This Python script is used for converting files from the 'dareczech' dataset
+             into a JSONL format. It removes duplicates and performs document stemming
+             and lemmatization for each token.
+Usage:                                       
+    dareczech.py [-h] -i INPUT_FILE [-d OUT_DIR]
+
+Arguments:
+    -i, --input: Path to an input .tsv file from dareczech dataset
+    -d, --out-dir: (optional) Path to an output directory 
+
+Note:   Output file name will be the same as the input file with the new .jsonl extension,
+        output files with the same name will be overwritten! 
+"""
+
 import argparse
 import logging
 import json
