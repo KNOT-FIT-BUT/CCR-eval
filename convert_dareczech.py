@@ -64,6 +64,7 @@ if not os.path.exists(input_path):
     logging.error(f"Input file does not exist ({input_path})")
     exit(1)
 
+logging.info("Starting...")
 input_lines_num = sum(1 for line in open(input_path)) - 1
 
 if args.out_dir:
@@ -117,7 +118,7 @@ with open(input_path) as file_in, open(output_path, "w") as file_out:
         doc_title   = re.search(DOC_TITLE_REG, doc).group(1)
         # doc_url     = re.search(DOC_URL_REG, doc).group(1)
         doc_bte     = re.search(DOC_BTE_REG, doc).group(1)
-        doc_bte_lemm = lemmatizer.lemmatize_text(doc_bte)
+        doc_bte = lemmatizer.lemmatize_text(doc_bte)
 
         doc_content_squash = squash_doc_content(title=title, doc_title=doc_title, doc_bte=doc_bte)
 
