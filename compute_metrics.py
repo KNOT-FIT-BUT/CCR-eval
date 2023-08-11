@@ -144,8 +144,8 @@ with open(query_file) as q_file:
                             recalls_at[k] += relevant_count/total_relevant if total_relevant != 0 else 0
                             map_at[k] += running_percision/k
                         
-                        if first_relevant_rank <= k:
-                            mrr_at[k] += (1/first_relevant_rank)
+                            if first_relevant_rank <= k:
+                                mrr_at[k] += (1/first_relevant_rank)
                               
                 ### QUESTION:   what should be the recall value if there are no relevant documents
 
