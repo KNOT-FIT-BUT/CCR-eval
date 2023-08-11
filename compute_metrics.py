@@ -11,6 +11,7 @@ from lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
 from lemmatize import Lemmatizer
 
 from time import sleep
+from datetime import datetime
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
@@ -19,7 +20,6 @@ RELEVANCE_THRESHOLD = 0.0
 
 # Count metrics for first k result
 METRICS_AT_K = [3,5,7,10]
-
 
 # Parse arguments
 parser = argparse.ArgumentParser()
@@ -53,7 +53,7 @@ query_file:str= args.query_file
 index_file:str = args.index_path
 out_path:str = args.out_path
 
-# Perform input file checks
+# Perform i/o file checks
 if not os.path.exists(query_file):
     logging.error("Query path does not exist, stopping..")
     exit(1)
@@ -64,13 +64,20 @@ if not os.path.exists(index_file):
     logging.error("Index path does not exist, stopping..")
     exit(1)
 
+if not out_path:
+    out_file = sys.stdout
+
+else:
+    out_file = open(out_path, "w")
+
 
 logging.info("Loading index..")
 searcher = LuceneSearcher(index_file)
 logging.info("Index loaded.")
 
+
+logging.info("Loading morpho model...")
 try:
-    logging.info("Loading morpho model...")
     lemmatizer = Lemmatizer()
     lemmatizer.load_model()
 except FileNotFoundError:
@@ -79,7 +86,7 @@ except FileNotFoundError:
 except ModelLoadError:
     logging.error("Error while loading czech morpho model.")
     exit(1)
-
+logging.info("Model loaded.")
 
 lines_count = sum(1 for line in open(query_file)) - 1
 with open(query_file) as q_file:
@@ -163,24 +170,30 @@ with open(query_file) as q_file:
         mrr_at[k] /= queries_count
         map_at[k] /= queries_count
 
-    
-    # Print metrics
-    print("----------")
-    print("RESULTS")
-    print("File:", query_file)
-    print("K\t\t\t",end="")
-    for k in METRICS_AT_K:
-        print(k,end="\t")
-    print()
 
-    statistics = {  
-        "PRECISION"   : precisions_at,
-        "RECALL   "   : recalls_at,
-        "MRR      "   : mrr_at,
-        "MAP      "   : map_at
-    }
-    for name, statistic in statistics.items():
-        print(name,end="\t\t")
-        for value in statistic.values():
-            print(round(value,2),end="\t")
-        print()
+# Print metrics
+out_file.write("-----------------\n")
+out_file.write("RESULTS\n")
+out_file.write("File: " + query_file + "\n")
+out_file.write("Date: " + str(datetime.now()) + "\n")
+out_file.write("@K\t\t\t")
+for k in METRICS_AT_K:
+    out_file.write(str(k) + "\t")
+out_file.write("\n")
+
+statistics = {  
+    "PRECISION"   : precisions_at,
+    "RECALL   "   : recalls_at,
+    "MRR      "   : mrr_at,
+    "MAP      "   : map_at
+}
+for name, statistic in statistics.items():
+    out_file.write(name + "\t\t")
+    for value in statistic.values():
+        out_file.write(str(round(value,2)) + "\t")
+    out_file.write("\n")
+
+if out_file != sys.stdout:
+    out_file.close()
+
+
