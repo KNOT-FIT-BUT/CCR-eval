@@ -10,7 +10,7 @@ from pyserini.search.lucene import LuceneSearcher
 from lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
 from lemmatize import Lemmatizer
 
-from time import sleep
+from time import time
 from datetime import datetime
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
@@ -105,6 +105,7 @@ with open(query_file) as q_file:
     recalls_at = {}
     mrr_at = {}
     map_at = {}
+    exec_time_at = {}
 
     # Initialize dictionaries
     for k in METRICS_AT_K:
@@ -112,6 +113,7 @@ with open(query_file) as q_file:
         recalls_at[k] = 0.0
         mrr_at[k] = 0.0
         map_at[k] = 0.0
+        exec_time_at[k] = 0.0
 
     for line in tqdm(q_file, total=lines_count, desc="Computing", unit="queries"):
         data = line.split("\t")
@@ -127,11 +129,15 @@ with open(query_file) as q_file:
             if current_query:
                 queries_count += 1
 
+                exec_time = time()
                 results = searcher.search(lemmatizer.lemmatize_text(current_query))
+                exec_time = exec_time - time()
+                
                 total_relevant = sum(1 for value in document_relevance.values() if value is True)
 
                 running_percision = 0                
-
+                first_relevant_rank = 0
+                
                 for i, result in enumerate(results):
                     result_id = result.docid
 
@@ -152,8 +158,9 @@ with open(query_file) as q_file:
                             map_at[k] += running_percision/k
                         
                             if first_relevant_rank <= k:
-                                mrr_at[k] += (1/first_relevant_rank)
-                              
+                                mrr_at[k] += (1/first_relevant_rank) if first_relevant_rank != 0 else 0
+
+                            exec_time_at[k] += exec_time  
                 ### QUESTION:   what should be the recall value if there are no relevant documents
 
 
@@ -169,7 +176,7 @@ with open(query_file) as q_file:
         recalls_at[k] /= queries_count
         mrr_at[k] /= queries_count
         map_at[k] /= queries_count
-
+        exec_time_at[k] /= queries_count
 
 # Print metrics
 out_file.write("-----------------\n")
@@ -185,8 +192,10 @@ statistics = {
     "PRECISION"   : precisions_at,
     "RECALL   "   : recalls_at,
     "MRR      "   : mrr_at,
-    "MAP      "   : map_at
+    "MAP      "   : map_at,
+    "EXEC TIME"   : exec_time_at
 }
+
 for name, statistic in statistics.items():
     out_file.write(name + "\t\t")
     for value in statistic.values():
