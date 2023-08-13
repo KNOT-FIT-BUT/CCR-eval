@@ -3,6 +3,7 @@
 from tqdm import tqdm
 import argparse
 import logging
+import json
 import sys
 import os
 
@@ -88,6 +89,14 @@ except ModelLoadError:
     exit(1)
 logging.info("Model loaded.")
 
+duplicate_urls = {}
+
+if os.path.exists("dareczech/duplicates.json"):
+    logging.info("Loading duplicates..")
+    duplicate_urls = json.load(open("dareczech/duplicates.json"))
+    logging.info("Duplicates loaded.")                                  
+
+logging.info("Preparig file..")
 lines_count = sum(1 for line in open(query_file)) - 1
 with open(query_file) as q_file:
 
@@ -119,6 +128,7 @@ with open(query_file) as q_file:
         data = line.split("\t")
 
         id      = data[0]
+        url     = data[2]
         query   = data[1]
         label   = float(data[5])
 
@@ -142,7 +152,9 @@ with open(query_file) as q_file:
                     result_id = result.docid
 
                     # Retrieved document is relevant
-                    if document_relevance.get(result_id) is True:
+                    if (    document_relevance.get(result_id) is True or
+                            (url in duplicate_urls and result_id in duplicate_urls[url])
+                        ):
                         relevant_count += 1
 
                         # If first relevant document
