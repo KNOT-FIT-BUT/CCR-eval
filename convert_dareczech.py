@@ -38,7 +38,7 @@ def squash_doc_content(
     return title + sep + doc_title + sep + doc_bte + sep
 
 # Default out directory
-OUT_DIR = "documents"
+OUT_DIR = "dareczech/lemmatized"
 
 # Parse arguments
 parser = argparse.ArgumentParser()
