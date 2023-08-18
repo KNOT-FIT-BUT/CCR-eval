@@ -15,13 +15,20 @@ from lemmatize import Lemmatizer
 from time import time
 from datetime import datetime
 
+def format_table_line(input_line:list, n=10, delim="|", out_stream=sys.stdout):
+    for i, item in enumerate(input_line):
+        out_stream.write(f"{item:^{n}}")
+        if i+1 != len(input_line):
+            out_stream.write(f" {delim} ")
+    out_stream.write("\n")
+
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 # Anything with score above 0 considered relevant
 RELEVANCE_THRESHOLD = 0.0 
 
 # Count metrics for first k result
-METRICS_AT_K = [3,5,7,10]
+METRICS_AT_K = [5, 10, 20, 50, 100]
 
 # Parse arguments
 parser = argparse.ArgumentParser()
@@ -29,7 +36,7 @@ parser.add_argument(
     "--query-file",
     required=True,
     action="store",
-    help="Path to input query file (.tsv)",
+    help="Path to input qrel file (.tsv)",
     dest="query_file"
 )
 
@@ -198,30 +205,40 @@ with open(query_file) as qrel_file:
         mrr_at[k] /= queries_count
         map_at[k] /= queries_count
         exec_time_at[k] /= queries_count
+        ndcg_at[k] /= queries_count
+
+
 
 # Print metrics
-out_file.write("-----------------\n")
-out_file.write("RESULTS\n")
-out_file.write("File: " + query_file + "\n")
-out_file.write("Date: " + str(datetime.now()) + "\n")
-out_file.write("@K\t\t\t")
-for k in METRICS_AT_K:
-    out_file.write(str(k) + "\t")
-out_file.write("\n")
+out_file.write("-------------------------\n")
+out_file.write("File:  " + query_file + "\n")
+out_file.write("Index: " + index_file + "\n")
+out_file.write("Date:  " + str(datetime.now()) + "\n\n")
+
+format_table_line(["@K"] + [str(val) for val in METRICS_AT_K], n=15, out_stream=out_file)
+out_file.write(7*15*"_" + "\n")
 
 statistics = {  
-    "PRECISION"   : precisions_at,
-    "RECALL   "   : recalls_at,
-    "MRR      "   : mrr_at,
-    "MAP      "   : map_at,
-    "EXEC TIME"   : exec_time_at
+    "PRECISION"         : precisions_at,
+    "RECALL"            : recalls_at,
+    "MRR"               : mrr_at,
+    "MAP"               : map_at,
+    "NDCG"              : ndcg_at,
+    "EXEC TIME [ms]"    : exec_time_at
 }
 
 for name, statistic in statistics.items():
-    out_file.write(name + "\t\t")
-    for value in statistic.values():
-        out_file.write(str(round(value,2)) + "\t")
-    out_file.write("\n")
+    line_values = [name]
+    for value in statistic.values():        
+        
+        # Convert exec_time to milliseconds
+        if statistic == exec_time_at:            
+            value = value * 10**3
+
+        line_values.append('{:.2f}'.format(round(value, 2)))
+
+    format_table_line(line_values, n=15, out_stream=out_file)
+    out_file
 
 if out_file != sys.stdout:
     out_file.close()
