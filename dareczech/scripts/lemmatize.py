@@ -17,7 +17,7 @@ class TokenizerError(Exception):
 
 class Lemmatizer():
 
-    MODEL_PATH = "morphodita/czech-morfflex2.0-pdtc1.0-220710/czech-morfflex2.0-pdtc1.0-220710.tagger"
+    MODEL_PATH = "../../morphodita/czech-morfflex2.0-pdtc1.0-220710/czech-morfflex2.0-pdtc1.0-220710.tagger"
     MODEL_LOADED = False
 
     SENTENCE_ENDERS     =  [".", "!", "?"]

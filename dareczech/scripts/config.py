@@ -1,0 +1,1 @@
+dareczech_dir = ".."
