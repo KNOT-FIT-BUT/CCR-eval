@@ -1,7 +1,6 @@
 # Directories
+dareczech/*
 models/
-morphodita/
-dareczech/
 __pycache__/
 documents/
 bin/
@@ -14,21 +13,23 @@ share/
 pyvenv.cfg
 
 # Data directories
-!dareczech/.gitkeep
 !models/.gitkeep
 !documents/.gitkeep
 
 # Data files
-dareczech/*
 *.tsv
 *.txt
+*.jsonl
+*.json
+*.stats
+*.zip
 
 # Testing scripts
 test*.py
 
 # Keep
+!dareczech/scripts
 !requirements.txt
-!.gitignore
 !README.md
 
 
