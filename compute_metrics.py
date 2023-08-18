@@ -97,14 +97,7 @@ except ModelLoadError:
     logging.error("Error while loading czech morpho model.")
     exit(1)
 logging.info("Model loaded.")
-
-duplicate_urls = {}
-
-if os.path.exists("dareczech/duplicates.json"):
-    logging.info("Loading duplicates..")
-    duplicate_urls = json.load(open("dareczech/duplicates.json"))
-    logging.info("Duplicates loaded.")                                  
-
+                        
 logging.info("Preparig file..")
 lines_count = sum(1 for line in open(query_file)) - 1
 with open(query_file) as qrel_file:
