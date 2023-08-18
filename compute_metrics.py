@@ -3,6 +3,7 @@
 from tqdm import tqdm
 import argparse
 import logging
+import math
 import json
 import sys
 import os
@@ -58,7 +59,8 @@ out_path:str = args.out_path
 if not os.path.exists(query_file):
     logging.error("Query path does not exist, stopping..")
     exit(1)
-elif query_file.endswith(".tsv"):
+elif not query_file.endswith(".tsv"):
+    print(query_file)
     logging.warning("Query file might not be in the correct format")
 
 if not os.path.exists(index_file):
@@ -98,13 +100,13 @@ if os.path.exists("dareczech/duplicates.json"):
 
 logging.info("Preparig file..")
 lines_count = sum(1 for line in open(query_file)) - 1
-with open(query_file) as q_file:
+with open(query_file) as qrel_file:
 
     # Skip query file header
-    next(q_file)
+    next(qrel_file)
 
     current_query = ""
-    document_relevance = {}
+    relevant_docs = {}
     queries_count = 0
 
     # Metrics
@@ -114,6 +116,7 @@ with open(query_file) as q_file:
     recalls_at = {}
     mrr_at = {}
     map_at = {}
+    ndcg_at = {}
     exec_time_at = {}
 
     # Initialize dictionaries
@@ -122,15 +125,14 @@ with open(query_file) as q_file:
         recalls_at[k] = 0.0
         mrr_at[k] = 0.0
         map_at[k] = 0.0
+        ndcg_at[k] = 0.0
         exec_time_at[k] = 0.0
 
-    for line in tqdm(q_file, total=lines_count, desc="Computing", unit="queries"):
+    for line in tqdm(qrel_file, total=lines_count, desc="Computing", unit="queries"):
         data = line.split("\t")
 
-        id      = data[0]
-        url     = data[2]
-        query   = data[1]
-        label   = float(data[5])
+        id, query, url, label = data
+        label = float(label)
 
         # New test-query
         if query != current_query:
@@ -139,48 +141,55 @@ with open(query_file) as q_file:
             if current_query:
                 queries_count += 1
 
-                exec_time = time()
-                results = searcher.search(lemmatizer.lemmatize_text(current_query))
-                exec_time = exec_time - time()
+                current_query = lemmatizer.lemmatize_text(current_query)
+
+                # Perform searches for top-k
+                for k in METRICS_AT_K:
+                    start_time = time()
+                    results = searcher.search(current_query, k=k)
+                    exec_time_at[k] += time() - start_time
                 
-                total_relevant = sum(1 for value in document_relevance.values() if value is True)
+                    total_relevant = len(relevant_docs)
+                    sorted_scores = sorted(relevant_docs.values(), reverse=True)
 
-                running_percision = 0                
-                first_relevant_rank = 0
-                
-                for i, result in enumerate(results):
-                    result_id = result.docid
+                    relevant_count = 0
+                    running_percision = 0
+                    first_relevant_rank = 0
+                    running_dcg = 0
+                    running_idcg = 0
 
-                    # Retrieved document is relevant
-                    if (    document_relevance.get(result_id) is True or
-                            (url in duplicate_urls and result_id in duplicate_urls[url])
-                        ):
-                        relevant_count += 1
+                    # Go through results
+                    for i, result in enumerate(results):
+                        result_id = result.docid
 
-                        # If first relevant document
-                        if relevant_count == 1:
-                            first_relevant_rank = (i+1)
-                    
-                    running_percision += relevant_count/(i+1)
+                        # Retrieved document is relevant
+                        if result_id in relevant_docs.keys():
+                            relevant_count += 1
 
-                    for k in METRICS_AT_K:
-                        if k == (i+1):
-                            precisions_at[k] += relevant_count/k
-                            recalls_at[k] += relevant_count/total_relevant if total_relevant != 0 else 0
-                            map_at[k] += running_percision/k
+                            # If first relevant document
+                            if relevant_count == 1:
+                                first_relevant_rank = (i+1)
                         
-                            if first_relevant_rank <= k:
-                                mrr_at[k] += (1/first_relevant_rank) if first_relevant_rank != 0 else 0
+                            # DCG only counted when relevant, else is 0
+                            relevancy = float(relevant_docs.get(result_id))
+                            running_dcg += relevancy/math.log2((i+1) + 1)
 
-                            exec_time_at[k] += exec_time  
-                ### QUESTION:   what should be the recall value if there are no relevant documents
+                        running_idcg += sorted_scores[i]/math.log2((i+1) + 1) if i < len(sorted_scores) else 0
+                        running_percision += relevant_count/(i+1)
 
+                    precisions_at[k] += relevant_count/k
+                    recalls_at[k] += relevant_count/total_relevant if total_relevant != 0 else 0
+                    map_at[k] += running_percision/k
+                    ndcg_at[k] += running_dcg/running_idcg if running_idcg != 0 else 0
+                
+                    if first_relevant_rank <= k:
+                        mrr_at[k] += (1/first_relevant_rank) if first_relevant_rank != 0 else 0
 
-            relevant_count = 0
-            document_relevance.clear()
+            relevant_docs.clear()
             current_query = query
-
-        document_relevance[id] = True if label > RELEVANCE_THRESHOLD else False
+        
+        if label > RELEVANCE_THRESHOLD:
+            relevant_docs[url] = label
     
     # Finish computing metrics
     for k in METRICS_AT_K:
