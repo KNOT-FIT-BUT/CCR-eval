@@ -1,5 +1,7 @@
 #! /usr/bin/python3
 
+from datetime import datetime
+from time import time
 from tqdm import tqdm
 import argparse
 import logging
@@ -9,11 +11,10 @@ import sys
 import os
 
 from pyserini.search.lucene import LuceneSearcher
-from lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
-from lemmatize import Lemmatizer
+from utils.lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
+from utils.lemmatize import Lemmatizer
 
-from time import time
-from datetime import datetime
+from config import *
 
 def format_table_line(input_line:list, n=10, delim="|", out_stream=sys.stdout):
     for i, item in enumerate(input_line):
@@ -26,9 +27,6 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 # Anything with score above 0 considered relevant
 RELEVANCE_THRESHOLD = 0.0 
-
-# Count metrics for first k result
-METRICS_AT_K = [5, 10, 20, 50, 100]
 
 # Parse arguments
 parser = argparse.ArgumentParser()
