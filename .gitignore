@@ -8,6 +8,10 @@ include/
 lib/
 lib64
 share/
+stats/
+indexes
+morphodita
+CCR
 
 # Config files
 pyvenv.cfg
