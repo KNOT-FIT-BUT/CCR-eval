@@ -11,7 +11,7 @@ import os
 from utils.lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
 from utils.lemmatize import Lemmatizer
 from utils.search import IndexSearcher
-from utils.formatting import format_table_line
+from utils.formatting import  print_stats
 
 from args_compute_metrics import parser
 from config import *
@@ -84,7 +84,7 @@ with open(query_file) as qrel_file:
         ndcg_at[k] = 0.0
         exec_time_at[k] = 0.0
 
-    for line in tqdm(qrel_file, total=lines_count, desc="Computing", unit="queries"):
+    for line in tqdm(qrel_file, total=lines_count, desc="Computing", unit="queries", disable=False):
         data = line.split("\t")
 
         id, query, url, label = data
@@ -157,18 +157,6 @@ with open(query_file) as qrel_file:
         exec_time_at[k] /= queries_count
         ndcg_at[k] /= queries_count
 
-
-
-# Print metrics
-out_file.write("-------------------------\n")
-out_file.write("Date: " + str(datetime.now()) + "\n")
-out_file.write("Query count: " + str(queries_count) + "\n")
-out_file.write("Qrel: " + query_file + "\n")
-out_file.write("Index: " + index_file + "\n")
-
-format_table_line(["@K"] + [str(val) for val in METRICS_AT_K], n=15, out_stream=out_file)
-out_file.write(7*15*"_" + "\n")
-
 statistics = {  
     "PRECISION"         : precisions_at,
     "RECALL"            : recalls_at,
@@ -178,20 +166,8 @@ statistics = {
     "EXEC TIME [ms]"    : exec_time_at
 }
 
-for name, statistic in statistics.items():
-    line_values = [name]
-    for value in statistic.values():        
-        
-        # Convert exec_time to milliseconds
-        if statistic == exec_time_at:            
-            value = value * 10**3
-
-        line_values.append('{:.2f}'.format(round(value, 2)))
-
-    format_table_line(line_values, n=15, out_stream=out_file)
-    out_file
+print_stats(statistics, METRICS_AT_K, queries_count, query_file, index_file, out_file)
 
 if out_file != sys.stdout:
     out_file.close()
-
 
