@@ -27,41 +27,34 @@ lemmatize_query = args.lemmatize_query
 
 # Perform i/o file checks
 if not os.path.exists(query_file):
-    logging.error("Query path does not exist, stopping..")
+    logger.error("Query path does not exist, stopping..")
     exit(1)
 elif not query_file.endswith(".tsv"):
     print(query_file)
-    logging.warning("Query file might not be in the correct format")
-
-if not os.path.exists(index_file):
-    logging.error("Index path does not exist, stopping..")
-    exit(1)
-
-if not out_path:
-    out_file = sys.stdout
-
-else:
-    out_file = open(out_path, "w")
+    logger.warning("Query file might not be in the correct format")
 
 
-logging.info("Loading index..")
-searcher = LuceneSearcher(index_file)
-logging.info("Index loaded.")
+# Ability to write both to stdout and output file
+out_file = open(out_path, "w") if out_path else sys.stdout
 
+logger.info("INDEX TYPE: " + index_type)
+   
+searcher = IndexSearcher(index_file, index_type, collection=collection)
 
-logging.info("Loading morpho model...")
-try:
-    lemmatizer = Lemmatizer()
-    lemmatizer.load_model()
-except FileNotFoundError:
-    logging.error("Morpho model not found.")
-    exit(1)
-except ModelLoadError:
-    logging.error("Error while loading czech morpho model.")
-    exit(1)
-logging.info("Model loaded.")
+if lemmatize_query:
+    logger.info("Loading morpho model...")
+    try:
+        lemmatizer = Lemmatizer(MORPHODITA_MODEL)
+        lemmatizer.load_model()
+    except FileNotFoundError:
+        logger.error("Morpho model not found.")
+        exit(1)
+    except ModelLoadError:
+        logger.error("Error while loading czech morpho model.")
+        exit(1)
+    logger.info("Model loaded.")
                         
-logging.info("Preparig file..")
+logger.info("Preparig file..")
 lines_count = sum(1 for line in open(query_file)) - 1
 with open(query_file) as qrel_file:
 
@@ -104,13 +97,14 @@ with open(query_file) as qrel_file:
             if current_query:
                 queries_count += 1
 
-                current_query = lemmatizer.lemmatize_text(current_query)
+                if lemmatize_query:
+                    current_query = lemmatizer.lemmatize_text(current_query)
 
                 # Perform searches for top-k
                 for k in METRICS_AT_K:
-                    start_time = time()
-                    results = searcher.search(current_query, k=k)
-                    exec_time_at[k] += time() - start_time
+                    
+                    results = searcher.search(query=current_query, k=k, include_content=False)
+                    exec_time_at[k] += searcher.get_last_search_time()
                 
                     total_relevant = len(relevant_docs)
                     sorted_scores = sorted(relevant_docs.values(), reverse=True)
@@ -123,7 +117,7 @@ with open(query_file) as qrel_file:
 
                     # Go through results
                     for i, result in enumerate(results):
-                        result_id = result.docid
+                        result_id = result[0]
 
                         # Retrieved document is relevant
                         if result_id in relevant_docs.keys():
@@ -133,7 +127,7 @@ with open(query_file) as qrel_file:
                             if relevant_count == 1:
                                 first_relevant_rank = (i+1)
                         
-                            # DCG only counted when relevant, else is 0
+                            # DCG only counted when relevant, else 0
                             relevancy = float(relevant_docs.get(result_id))
                             running_dcg += relevancy/math.log2((i+1) + 1)
 
@@ -167,9 +161,10 @@ with open(query_file) as qrel_file:
 
 # Print metrics
 out_file.write("-------------------------\n")
-out_file.write("File:  " + query_file + "\n")
+out_file.write("Date: " + str(datetime.now()) + "\n")
+out_file.write("Query count: " + str(queries_count) + "\n")
+out_file.write("Qrel: " + query_file + "\n")
 out_file.write("Index: " + index_file + "\n")
-out_file.write("Date:  " + str(datetime.now()) + "\n\n")
 
 format_table_line(["@K"] + [str(val) for val in METRICS_AT_K], n=15, out_stream=out_file)
 out_file.write(7*15*"_" + "\n")
