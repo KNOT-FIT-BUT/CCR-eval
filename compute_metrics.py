@@ -4,13 +4,10 @@ from datetime import datetime
 from time import time
 from tqdm import tqdm
 import argparse
-import logging
 import math
-import json
 import sys
 import os
 
-from pyserini.search.lucene import LuceneSearcher
 from utils.lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
 from utils.lemmatize import Lemmatizer
 
