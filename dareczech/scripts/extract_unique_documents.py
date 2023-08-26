@@ -1,20 +1,20 @@
 #!/usr/bin/python3
 
-import re  
+from tqdm import tqdm
 import json
+import re  
 
+from args.args_extract_unique_documents import parser
+from utils import squash_doc_content, lines_in_file
 from dareczech_reg import DOC_BTE_REG
 
-input_file = "../raw/dareczech.tsv"
-doc_file = "../documents/dareczech_docs.jsonl"
+args = parser.parse_args()
 
-def squash_doc_content(
-        title:str,
-        doc_title:str="",
-        doc_bte:str="", 
-        sep:str="\n") -> str:
-    return title + sep + doc_title + sep + doc_bte + sep
+input_file = args.input_file
+doc_file  = args.output_file
+out_file_format = args.format
 
+print("Output format: ", out_file_format)
 
 with open(input_file) as file_in, open(doc_file, "w") as doc_file:
     # Skip tsv header
@@ -22,7 +22,10 @@ with open(input_file) as file_in, open(doc_file, "w") as doc_file:
 
     saved_docs = set()
     duplicates_count = 0
-    for line in file_in:
+    lines_count = lines_in_file(input_file) - 1
+    line_idx = 0
+
+    for line in tqdm(file_in, total=lines_count, desc="Processing", unit="docs"):
         fields = line.strip().split('\t')
         id, query, url, doc, title, label = fields
         
@@ -35,12 +38,20 @@ with open(input_file) as file_in, open(doc_file, "w") as doc_file:
         doc_bte = re.search(DOC_BTE_REG, str(doc)).group(1)
         doc_content = squash_doc_content(title=title, doc_bte=doc_bte)
         
-        out_format = {
-            "url": url,
-            "doc": doc_content
-        }
+        if out_file_format == "jsonl":
+            out_format = {
+                "url": url,
+                "doc": doc_content
+            }
+            data_out = json.dumps(out_format, ensure_ascii=False)
+        
+        elif out_file_format == "tsv":
+            doc_content = doc_content.replace("\n", " ")
+            data_out = f"{line_idx}\t{doc_content}"
+            line_idx += 1 
 
-        doc_file.write(json.dumps(out_format, ensure_ascii=False) + "\n")
+        doc_file.write(data_out + "\n")
 
 print("Duplicates:", duplicates_count)
+print("Done.")
 

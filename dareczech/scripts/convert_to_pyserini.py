@@ -16,45 +16,21 @@ Note:   Output file name will be the same as the input file with the new .jsonl 
         output files with the same name will be overwritten! 
 """
 
-import argparse
+from tqdm import tqdm
 import logging
 import json
 import os
-from tqdm import tqdm
 
 from lemmatize import Lemmatizer
 from lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
 
+from args.args_convert_to_pyserini.py import parser
+
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 # Default out directory
-OUT_DIR = "../documents/converted"
+OUT_DIR = "../documents"
 
-# Parse arguments
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-i", "--input", 
-    required=True,
-    action="store",
-    help="Input file",
-    dest="input_file"
-)
-
-parser.add_argument(
-    "-d", "--out-dir", 
-    required=False, 
-    action="store", 
-    help="Output directory",
-    dest="out_dir"
-)
-
-parser.add_argument(
-    "--lemmatize", 
-    required=False, 
-    action="store_true", 
-    help="Lemmatize tokens (words) in documents",
-    dest="lemmatize"
-)
 args = parser.parse_args()
 
 if args.lemmatize:
@@ -71,8 +47,8 @@ input_lines_num = sum(1 for line in open(input_path)) - 1
 if args.out_dir:
     OUT_DIR = args.out_dir
 
-if not input_path.endswith(".tsv"):
-    logging.warning("Input file might not be in the correct format (expected .tsv)")
+if not input_path.endswith(".jsonl"):
+    logging.warning("Input file might not be in the correct format (expected .jsonl)")
 
 output_path = os.path.basename(os.path.abspath(input_path))
 output_path = f"{OUT_DIR}/{os.path.splitext(output_path)[0]}.jsonl"
@@ -109,6 +85,5 @@ with open(input_path) as file_in, open(output_path, "w") as file_out:
         }
 
         file_out.write(json.dumps(doc_json, ensure_ascii=False) + "\n")
-        print(json.dumps(doc_json, ensure_ascii=False))
 
 logging.info("Done")

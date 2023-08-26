@@ -1,12 +1,9 @@
 #! /usr/bin/env python3
 
-import argparse
 import json
 import os
 
-parser = argparse.ArgumentParser(description="Find duplicate URLs in a TSV file and save them to a JSON file.")
-parser.add_argument("-d", "--input-dir", required=True, action="store", dest="input_dir", type=str, help="Path to the input TSV file")
-parser.add_argument("-o", "--output",required=True, action="store", dest="output_file", type=str, help="Path to the output JSON file")
+from args.args_generate_dareczech_duplicates import parser
 
 args = parser.parse_args()
 
