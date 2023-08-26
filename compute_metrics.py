@@ -10,52 +10,20 @@ import os
 
 from utils.lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
 from utils.lemmatize import Lemmatizer
+from utils.search import IndexSearcher
+from utils.formatting import format_table_line
 
+from args_compute_metrics import parser
 from config import *
-
-def format_table_line(input_line:list, n=10, delim="|", out_stream=sys.stdout):
-    for i, item in enumerate(input_line):
-        out_stream.write(f"{item:^{n}}")
-        if i+1 != len(input_line):
-            out_stream.write(f" {delim} ")
-    out_stream.write("\n")
-
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
-
-# Anything with score above 0 considered relevant
-RELEVANCE_THRESHOLD = 0.0 
-
-# Parse arguments
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--query-file",
-    required=True,
-    action="store",
-    help="Path to input qrel file (.tsv)",
-    dest="query_file"
-)
-
-parser.add_argument(
-    "--index", 
-    required=True,
-    action="store",
-    help="Path to index",
-    dest="index_path"
-)
-
-parser.add_argument(
-    "-o", "--output", 
-    required=False, 
-    action="store", 
-    help="Output path for metrics file",
-    dest="out_path"
-)
 
 args = parser.parse_args()
 
-query_file:str= args.query_file
-index_file:str = args.index_path
-out_path:str = args.out_path
+query_file = args.query_file
+index_file = args.index_path
+out_path = args.out_path
+index_type = args.index_type
+collection = args.collection
+lemmatize_query = args.lemmatize_query
 
 # Perform i/o file checks
 if not os.path.exists(query_file):
