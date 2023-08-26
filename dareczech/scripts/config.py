@@ -1,1 +1,6 @@
 dareczech_dir = ".."
+
+# Distribution 
+MAX_CHAR_THRESHOLD = 5000
+MAX_WORDS_THRESHOLD = 1000
+MAX_SENTENCE_THRESHOLD = 30
