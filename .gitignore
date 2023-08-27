@@ -13,20 +13,18 @@ indexes
 morphodita
 CCR
 
-# Config files
-pyvenv.cfg
-
 # Data directories
 !models/.gitkeep
-!documents/.gitkeep
 
-# Data files
+# Unwanted
 *.tsv
+*.png
 *.txt
 *.jsonl
 *.json
 *.stats
 *.zip
+*.log
 
 # Testing scripts
 test*.py
