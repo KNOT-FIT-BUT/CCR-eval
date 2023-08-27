@@ -10,20 +10,18 @@ import os
 
 from utils.lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
 from utils.lemmatize import Lemmatizer
+from utils.stats import IndexStats
 from utils.search import IndexSearcher
-from utils.formatting import  print_stats
+from utils.formatting import print_stats, print_grid_table, plot_grid_search
 
 from args_compute_metrics import parser
 from config import *
 
-args = parser.parse_args()
+if __name__ == "__main__":
+    args = parser.parse_args()
 
-query_file = args.query_file
-index_file = args.index_path
-out_path = args.out_path
-index_type = args.index_type
-collection = args.collection
-lemmatize_query = args.lemmatize_query
+    K1_values = [K1_default]
+    B_values = [B_default]
 
 # Perform i/o file checks
 if not os.path.exists(query_file):
@@ -33,141 +31,40 @@ elif not query_file.endswith(".tsv"):
     print(query_file)
     logger.warning("Query file might not be in the correct format")
 
+    index_stats = IndexStats(args.index_type, load_morpho_model=True)
 
-# Ability to write both to stdout and output file
-out_file = open(out_path, "w") if out_path else sys.stdout
-
-logger.info("INDEX TYPE: " + index_type)
-   
-searcher = IndexSearcher(index_file, index_type, collection=collection)
-
-if lemmatize_query:
-    logger.info("Loading morpho model...")
-    try:
-        lemmatizer = Lemmatizer(MORPHODITA_MODEL)
-        lemmatizer.load_model()
-    except FileNotFoundError:
-        logger.error("Morpho model not found.")
-        exit(1)
-    except ModelLoadError:
-        logger.error("Error while loading czech morpho model.")
-        exit(1)
-    logger.info("Model loaded.")
-                        
-logger.info("Preparig file..")
-lines_count = sum(1 for line in open(query_file)) - 1
-with open(query_file) as qrel_file:
-
-    # Skip query file header
-    next(qrel_file)
-
-    current_query = ""
-    relevant_docs = {}
-    queries_count = 0
-
-    # Metrics
-    relevant_count = 0
-
-    precisions_at = {}
-    recalls_at = {}
-    mrr_at = {}
-    map_at = {}
-    ndcg_at = {}
-    exec_time_at = {}
-
-    # Initialize dictionaries
-    for k in METRICS_AT_K:
-        precisions_at[k] = 0.0
-        recalls_at[k] = 0.0
-        mrr_at[k] = 0.0
-        map_at[k] = 0.0
-        ndcg_at[k] = 0.0
-        exec_time_at[k] = 0.0
-
-    for line in tqdm(qrel_file, total=lines_count, desc="Computing", unit="queries", disable=False):
-        data = line.split("\t")
-
-        id, query, url, label = data
-        label = float(label)
-
-        # New test-query
-        if query != current_query:
-
-            # Perform current query search
-            if current_query:
-                queries_count += 1
-
-                if lemmatize_query:
-                    current_query = lemmatizer.lemmatize_text(current_query)
-
-                # Perform searches for top-k
-                for k in METRICS_AT_K:
-                    
-                    results = searcher.search(query=current_query, k=k, include_content=False)
-                    exec_time_at[k] += searcher.get_last_search_time()
-                
-                    total_relevant = len(relevant_docs)
-                    sorted_scores = sorted(relevant_docs.values(), reverse=True)
-
-                    relevant_count = 0
-                    running_percision = 0
-                    first_relevant_rank = 0
-                    running_dcg = 0
-                    running_idcg = 0
-
-                    # Go through results
-                    for i, result in enumerate(results):
-                        result_id = result[0]
-
-                        # Retrieved document is relevant
-                        if result_id in relevant_docs.keys():
-                            relevant_count += 1
-
-                            # If first relevant document
-                            if relevant_count == 1:
-                                first_relevant_rank = (i+1)
-                        
-                            # DCG only counted when relevant, else 0
-                            relevancy = float(relevant_docs.get(result_id))
-                            running_dcg += relevancy/math.log2((i+1) + 1)
-
-                        running_idcg += sorted_scores[i]/math.log2((i+1) + 1) if i < len(sorted_scores) else 0
-                        running_percision += relevant_count/(i+1)
-
-                    precisions_at[k] += relevant_count/k
-                    recalls_at[k] += relevant_count/total_relevant if total_relevant != 0 else 0
-                    map_at[k] += running_percision/k
-                    ndcg_at[k] += running_dcg/running_idcg if running_idcg != 0 else 0
-                
-                    if first_relevant_rank <= k:
-                        mrr_at[k] += (1/first_relevant_rank) if first_relevant_rank != 0 else 0
-
-            relevant_docs.clear()
-            current_query = query
-        
-        if label > RELEVANCE_THRESHOLD:
-            relevant_docs[url] = label
+    stats = {}
+    total_runs = len(K1_values) * len(B_values)
     
-    # Finish computing metrics
-    for k in METRICS_AT_K:
-        precisions_at[k] /= queries_count
-        recalls_at[k] /= queries_count
-        mrr_at[k] /= queries_count
-        map_at[k] /= queries_count
-        exec_time_at[k] /= queries_count
-        ndcg_at[k] /= queries_count
+    current_run = 1
+    for k1 in K1_values:
+        for b in B_values:
+            stats[(k1,b)], queries_count = index_stats.calculate_stats(
+                args.index_path,
+                args.query_file, 
+                args.collection, 
+                args.lemmatize_query, 
+                k1=k1, b=b,
+                current_run=current_run,
+                total_runs=total_runs
+            )
 
-statistics = {  
-    "PRECISION"         : precisions_at,
-    "RECALL"            : recalls_at,
-    "MRR"               : mrr_at,
-    "MAP"               : map_at,
-    "NDCG"              : ndcg_at,
-    "EXEC TIME [ms]"    : exec_time_at
-}
+            current_run += 1 
 
-print_stats(statistics, METRICS_AT_K, queries_count, query_file, index_file, out_file)
+    # Ability to write both to stdout and output file
+    out_file = open(args.out_path, "w") if args.out_path else sys.stdout
+    
+    if args.grid_search:
+        # TODO Export to csv, plot graphs
+        print_grid_table(stats, METRICS_AT_K, queries_count, args.query_file, args.index_path, out_file)
+        logger.info("Saved grid table to: " + args.out_path)
+        for k in METRICS_AT_K:
+            plot_name = f"dev_gs_precison@{k}.png"
+            plot_grid_search(stats, plot_name, k=k)
+            logger.info("Saved plot to " + plot_name)
+        
+    else:
+        print_stats(stats, METRICS_AT_K, queries_count, args.query_file, args.index_path, out_file)
 
 if out_file != sys.stdout:
     out_file.close()
-
