@@ -16,26 +16,41 @@ class IncorrectIndexType(Exception):
 
 class IndexSearcher():
 
+    # Default values
     last_search_time = -1 
+    K1 = 0.9
+    B = 0.4
 
-    def __init__(self, index:str, index_type:str, collection=""):
+    def __init__(self, index_path:str, index_type:str, collection=""):
         if index_type not in INDEX_TYPES:
             raise IncorrectIndexType
         
+        self.index_type = index_type
+        self.index_path = index_path
+        self.index = None
+        
         if index_type == "bm25":
-            index = LuceneSearcher(index)
-            self.search_index = index.search 
+            self.__init_bm25_searcher()
 
         elif index_type == "colbert":
             tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
             logger.info("[COLBERT] Loading doc collection..")
             self.doc_subset, self.collection = load_collection(collection)
-            searcher = Searcher(index=index, collection=self.collection)
+            searcher = Searcher(index=index_path, collection=self.collection)
             logger.info("[COLBERT] Loaded.") 
 
-            self.search_index = searcher.search_all
+            self.searcher = searcher.search_all
+        
+    def __init_bm25_searcher(self):
+        self.adjust_bm25_params(self.K1, self.B)
 
-        self.index_type = index_type
+    def adjust_bm25_params(self, k1:float, b:float):
+        if self.index_type == "bm25":
+            del self.index
+            index = LuceneSearcher(self.index_path)
+            index.set_bm25(float(k1), float(b))
+            self.searcher = index.search 
+            self.index = index
 
     def search(self, query:str, k:int=10, include_content=True):
         results_out = []
@@ -44,7 +59,7 @@ class IndexSearcher():
 
         if self.index_type == "bm25":
             start_time = time()
-            results = self.search_index(query, k=k)
+            results = self.searcher(query, k=k)
             self.last_search_time = time() - start_time
             
             for doc in results:                
@@ -56,7 +71,7 @@ class IndexSearcher():
             query_id = f"{id}_{k}"
             
             start_time = time()
-            raw_scores = self.search_index({query_id:query}, k=k)
+            raw_scores = self.searcher({query_id:query}, k=k)
             self.last_search_time = time() - start_time
 
             for didx, rank, score in raw_scores.data[query_id]:
