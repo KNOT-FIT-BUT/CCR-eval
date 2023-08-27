@@ -29,6 +29,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-o", "--output", 
+    required=False, 
+    action="store", 
+    help="Output path for metrics file",
+    dest="out_path"
+)
+
+
+parser.add_argument(
     "--source-collection", 
     required=False, 
     default="",
@@ -47,9 +56,10 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-o", "--output", 
+    "--grid-search",
     required=False, 
-    action="store", 
-    help="Output path for metrics file",
-    dest="out_path"
+    default=False, 
+    action="store_true",
+    help="Grid search for different k1, b values (set in config)",
+    dest="grid_search"
 )

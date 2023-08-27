@@ -23,13 +23,9 @@ if __name__ == "__main__":
     K1_values = [K1_default]
     B_values = [B_default]
 
-# Perform i/o file checks
-if not os.path.exists(query_file):
-    logger.error("Query path does not exist, stopping..")
-    exit(1)
-elif not query_file.endswith(".tsv"):
-    print(query_file)
-    logger.warning("Query file might not be in the correct format")
+    if args.grid_search:
+        K1_values = K1_grid_values
+        B_values = B_grid_values
 
     index_stats = IndexStats(args.index_type, load_morpho_model=True)
 
