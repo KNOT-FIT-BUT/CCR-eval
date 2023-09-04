@@ -63,3 +63,21 @@ parser.add_argument(
     help="Grid search for different k1, b values (set in config)",
     dest="grid_search"
 )
+
+parser.add_argument(
+    "--format", 
+    required=True, 
+    action="store", 
+    help="Output format of statistics (graph, table, csv)", 
+    choices=["graph", "table", "csv"],
+    dest="format"
+)
+
+parser.add_argument(
+    "--pairs", "--id-url-pairs", 
+    required=False, 
+    action="store", 
+    default=None,
+    help="Path to id-url-pairs file (jsonl format)", 
+    dest="pairs"
+)
