@@ -32,15 +32,19 @@ class IndexSearcher():
         if index_type == "bm25":
             self.__init_bm25_searcher()
 
-        elif index_type == "colbert":
+        elif index_type == "plaidx":
             tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
-            logger.info("[COLBERT] Loading doc collection..")
+            logger.info("[PLAIDX] Loading doc collection..")
             self.doc_subset, self.collection = load_collection(collection)
             searcher = Searcher(index=index_path, collection=self.collection)
-            logger.info("[COLBERT] Loaded.") 
+            logger.info("[PLAIDX] Loaded.") 
 
             self.searcher = searcher.search_all
-        
+
+        elif index_type == "colbert":
+            tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
+            self.searcher = Searcher(index=index_path)
+
     def __init_bm25_searcher(self):
         self.adjust_bm25_params(self.K1, self.B)
 
@@ -51,8 +55,14 @@ class IndexSearcher():
             index.set_bm25(float(k1), float(b))
             self.searcher = index.search 
             self.index = index
+        else:
+            raise Exception("K1,B params not present for this type of index")
 
+    # Search index
     def search(self, query:str, k:int=10, include_content=True):
+        # Results output format - list of tuples
+        # [ (docid, doccontent), (docid2, doccontent2), ...]
+
         results_out = []
 
         query = query.lower()
@@ -67,7 +77,7 @@ class IndexSearcher():
                 doc_content = json.loads(str(doc.raw))['contents'] if include_content else ""
                 results_out.append((doc_id, doc_content))
 
-        elif self.index_type == "colbert":
+        elif self.index_type == "plaidx":
             query_id = f"{id}_{k}"
             
             start_time = time()
@@ -77,7 +87,18 @@ class IndexSearcher():
             for didx, rank, score in raw_scores.data[query_id]:
                 doc_content = self.doc_subset[didx]["text"] if include_content else ""
                 results_out.append((self.doc_subset[didx]["id"], doc_content))
-             
+        
+        elif self.index_type == "colbert":
+            start_time = time()
+            results = self.searcher.search(query, k=k)
+            self.last_search_time = time() - start_time
+            
+            for passage_id, passage_rank, passage_score in zip(*results):
+                doc_content = ""
+                if include_content:
+                    doc_content = self.searcher.collection[passage_id]
+                results_out.append((passage_id, doc_content))
+                        
         return results_out
     
 

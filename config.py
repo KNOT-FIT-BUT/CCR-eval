@@ -1,12 +1,12 @@
 import logging
 import sys
 
-LOGGING_LEVEL = logging.DEBUG
+LOGGING_LEVEL = logging.INFO
 LOGGING_FORMAT = '%(asctime)s %(levelname)s: %(message)s'
 
 # Metrics at
 METRICS_AT_K = [5, 10, 20, 50, 100]
-INDEX_TYPES = ["bm25", "colbert"]
+INDEX_TYPES = ["bm25", "plaidx", "colbert"]
 
 # Default BM25 params
 K1_default, B_default = 0.9, 0.4
