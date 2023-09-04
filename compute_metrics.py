@@ -8,17 +8,19 @@ import math
 import sys
 import os
 
+from args_compute_metrics import parser
+from config import *
+
 from utils.lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
 from utils.lemmatize import Lemmatizer
 from utils.stats import IndexStats
 from utils.search import IndexSearcher
-from utils.formatting import print_stats, print_grid_table, plot_grid_search
+from utils.formatting import print_stats, print_grid_table, plot_grid_search, print_stats_csv
 
-from args_compute_metrics import parser
-from config import *
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    stats_format = args.format
 
     K1_values = [K1_default]
     B_values = [B_default]
@@ -27,7 +29,11 @@ if __name__ == "__main__":
         K1_values = K1_grid_values
         B_values = B_grid_values
 
-    index_stats = IndexStats(args.index_type, load_morpho_model=True)
+    load_morho_model = False
+    if args.lemmatize_query:
+        load_morho_model = True
+
+    index_stats = IndexStats(args.index_type, load_morpho_model=load_morho_model)
 
     stats = {}
     total_runs = len(K1_values) * len(B_values)
@@ -42,7 +48,8 @@ if __name__ == "__main__":
                 args.lemmatize_query, 
                 k1=k1, b=b,
                 current_run=current_run,
-                total_runs=total_runs
+                total_runs=total_runs,
+                id_url_pairs=args.pairs
             )
 
             current_run += 1 
@@ -60,7 +67,13 @@ if __name__ == "__main__":
             logger.info("Saved plot to " + plot_name)
         
     else:
-        print_stats(stats, METRICS_AT_K, queries_count, args.query_file, args.index_path, out_file)
+        if stats_format == "table":
+            print_stats(stats, METRICS_AT_K, queries_count, args.query_file, args.index_path, out_file)
+        elif stats_format == "graph":
+            # TODO
+            pass
+        elif stats_format == "csv":
+            print_stats_csv(stats, METRICS_AT_K, queries_count, )
 
 if out_file != sys.stdout:
     out_file.close()
