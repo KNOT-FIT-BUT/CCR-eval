@@ -1,18 +1,32 @@
+# BM25
 from pyserini.search.lucene import LuceneSearcher
+
+# ColBERT
+from colbert.indexing.codecs.residual import ResidualCodec
 from colbert.infra import ColBERTConfig
 from colbert import Searcher
-from colbert.indexing.codecs.residual import ResidualCodec
+
+# SPLADE
+from .splade_funcs import to_list, numba_score_float, select_topk
+from splade.datasets.datasets import CollectionDatasetPreLoad
+from splade.datasets.dataloaders import CollectionDataLoader
+from splade.models.transformer_rep import Splade, SpladeDoc
+from splade.indexing.inverted_index import IndexDictOfArray
+from transformers import AutoTokenizer
+from collections import defaultdict
+import pickle
+import torch
+import numba
 
 from functools import partialmethod
 from tqdm import tqdm
 from time import time
+import numpy as np
 import json
+import os
 
 from config import INDEX_TYPES, logger
 from utils.collection import load_collection
-
-class IncorrectIndexType(Exception):
-    pass
 
 class IndexSearcher():
 
@@ -23,11 +37,12 @@ class IndexSearcher():
 
     def __init__(self, index_path:str, index_type:str, collection=""):
         if index_type not in INDEX_TYPES:
-            raise IncorrectIndexType
+            raise NotImplementedError
         
         self.index_type = index_type
         self.index_path = index_path
         self.index = None
+        self.collection = collection
         
         if index_type == "bm25":
             self.__init_bm25_searcher()
@@ -44,6 +59,24 @@ class IndexSearcher():
         elif index_type == "colbert":
             tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
             self.searcher = Searcher(index=index_path)
+
+        elif index_type == "splade":
+            self. model = Splade(model_type_or_dir="naver/splade-cocondenser-selfdistil")
+            self.device =  torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+            self.collection_size = len(pickle.load(open(os.path.join(index_path, "doc_ids.pkl"),"rb")))
+            self.tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path="naver/splade-cocondenser-selfdistil")
+            self.sparse_index = IndexDictOfArray(self.index_path, dim_voc=self.model.output_dim)
+            self.doc_ids = pickle.load(open(os.path.join(index_path, "doc_ids.pkl"), "rb"))
+            self.index_doc_ids = numba.typed.Dict()
+            self.index_doc_values = numba.typed.Dict()
+            for key, value in self.sparse_index.index_doc_id.items():
+                self.index_doc_ids[key] = value
+            for key, value in self.sparse_index.index_doc_value.items():
+                self.index_doc_values[key] = value
+
+        # TODO
+        elif index_type == "openaiada":
+            pass
 
     def __init_bm25_searcher(self):
         self.adjust_bm25_params(self.K1, self.B)
@@ -98,9 +131,46 @@ class IndexSearcher():
                 if include_content:
                     doc_content = self.searcher.collection[passage_id]
                 results_out.append((passage_id, doc_content))
-                        
-        return results_out
-    
+        
+        elif self.index_type == "splade":
+            with torch.no_grad():
+                query = ["auto"]
+                processed_passage = self.tokenizer(query,
+                                    add_special_tokens=True,
+                                    padding="longest",  # pad to max sequence length in batch
+                                    truncation="longest_first",  # truncates to self.max_length
+                                    max_length=self.tokenizer.model_max_length,
+                                    return_attention_mask=True)
+                data =  {k: torch.tensor(v) for k, v in processed_passage.items()}
+                inputs = {k: v for k, v in data.items()}
+                for k,v in inputs.items():
+                    inputs[k] = v.to(self.device)
+                query = self.model(q_kwargs=inputs)["q_rep"]
+                row, col = torch.nonzero(query, as_tuple=True)
+                values = query[to_list(row), to_list(col)]
+                
+                filtered_indexes, scores = numba_score_float(
+                                                    self.index_doc_ids,
+                                                    self.index_doc_values,
+                                                    col.cpu().numpy(),
+                                                    values.cpu().numpy().astype(np.float32),
+                                                    threshold=0,
+                                                    size_collection=self.collection_size
+                                                )
+                filtered_indexes, scores = select_topk(filtered_indexes, scores, k=5)    
+                
+
+                if include_content and self.collection:
+                    # TODO
+                    pass
+                            
+                else:
+                    for id_ in filtered_indexes:
+                        results_out.append((id_, None))
+                
+            return results_out
+        
 
     def get_last_search_time(self):
         return self.last_search_time
+
