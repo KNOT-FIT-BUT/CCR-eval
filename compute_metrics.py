@@ -15,7 +15,7 @@ from utils.lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
 from utils.lemmatize import Lemmatizer
 from utils.stats import IndexStats
 from utils.search import IndexSearcher
-from utils.formatting import print_stats, print_grid_table, plot_grid_search, print_stats_csv
+from utils.formatting import print_stats, print_grid_table, plot_grid_search, print_stats_csv, print_grid_csv
 
 
 if __name__ == "__main__":
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     if args.grid_search:
         # TODO Export to csv, plot graphs
         print_grid_table(stats, METRICS_AT_K, queries_count, args.query_file, args.index_path, out_file)
-        logger.info("Saved grid table to: " + args.out_path)
+        print_grid_csv(stats, METRICS_AT_K, out_file)
         for k in METRICS_AT_K:
             plot_name = f"dev_gs_precison@{k}.png"
             plot_grid_search(stats, plot_name, k=k)
