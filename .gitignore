@@ -12,6 +12,9 @@ stats/
 indexes
 morphodita
 CCR
+.Transformers_cache
+.logs
+.vscode
 
 # Data directories
 !models/.gitkeep
