@@ -9,7 +9,7 @@ METRICS_AT_K = [5, 10, 20, 50, 100]
 INDEX_TYPES = ["bm25", "colbert", "splade", "openaiada"]
 
 # Default BM25 params
-K1_default, B_default = 0.9, 0.4
+K1_default, B_default = 2.0, 1.0
 
 # Anything above this considered relevant
 RELEVANCE_THRESHOLD = 0.0 
