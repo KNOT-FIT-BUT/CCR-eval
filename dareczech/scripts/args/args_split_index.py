@@ -14,6 +14,7 @@ parser.add_argument(
     "-d", "--doc-file", 
     required=True,
     action="store",
+    default="url",
     help="Doc file (converted for pyserini)",
     dest="docs"
 )
@@ -29,6 +30,7 @@ parser.add_argument(
 parser.add_argument(
     "--doc-id-key", 
     required=False,
+    default="url",
     action="store", 
     help="Dictionary (json) key to document id (default 'id')",
     dest="doc_id_key"

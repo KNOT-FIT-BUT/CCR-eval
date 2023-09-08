@@ -11,7 +11,6 @@ from args.args_split_index import parser
 
 from tqdm import tqdm
 
-DOC_ID_KEY = "id"
 
 args = parser.parse_args()
 
@@ -22,7 +21,6 @@ output_docs = args.output
 
 if args.doc_id_key:
     DOC_ID_KEY = args.doc_id_key
-
 
 if not os.path.exists(qrel_file) or not os.path.exists(docs_file):
     print("Input file(s) not found")
@@ -38,7 +36,7 @@ with open(qrel_file) as qf:
 
     for line in qf:
         id, query, url, label = line.split("\t")
-        
+    
         if url not in qrel_urls:
             qrel_urls.add(url)
 
