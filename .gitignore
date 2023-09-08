@@ -17,6 +17,9 @@ CCR
 !models/.gitkeep
 
 # Unwanted
+*.csv
+*.yaml
+*.pickle
 *.tsv
 *.png
 *.txt
