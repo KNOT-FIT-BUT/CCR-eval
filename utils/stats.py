@@ -1,9 +1,8 @@
 from datetime import datetime
 from time import time
 from tqdm import tqdm
-import argparse
 import math
-import sys
+import json
 import os
 
 from utils.lemmatize import ModelLoadError, ModelNotLoadedError, TokenizerError
@@ -56,13 +55,27 @@ class IndexStats():
             lemmatize_query:str, 
             k1:float, b:float,
             current_run:int,
-            total_runs:int
+            total_runs:int,
+            id_url_pairs:str=None
         ):
 
         self.__perform_checks(query_file)
 
         searcher = IndexSearcher(index_file, self.index_type, collection=collection)
-        searcher.adjust_bm25_params(k1=k1, b=b)
+        
+        if self.index_type == "bm25":
+            searcher.adjust_bm25_params(k1=k1, b=b)
+
+
+        if id_url_pairs:
+            pairs = {}
+            logger.info("Loading qrel id-url pairs")
+            with open(id_url_pairs) as pairs_file:
+                for line in pairs_file:
+                    id, url = line.rstrip().split("\t")
+                    pairs[int(id)] = url
+            logger.info("Pairs loaded")
+    
 
         lines_count = sum(1 for line in open(query_file)) - 1
         with open(query_file) as qrel_file:
@@ -131,7 +144,9 @@ class IndexStats():
                             # Go through results
                             for i, result in enumerate(results):
                                 result_id = result[0]
-
+                                if id_url_pairs:
+                                    result_id = pairs.get(int(result_id))
+                                    
                                 # Retrieved document is relevant
                                 if result_id in relevant_docs.keys():
                                     relevant_count += 1
