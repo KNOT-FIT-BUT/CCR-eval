@@ -21,8 +21,6 @@ import numba
 # OpenAI
 from openai.embeddings_utils import get_embedding, cosine_similarity
 import pandas as pd
-import tiktoken
-
 
 from functools import partialmethod
 from tqdm import tqdm
@@ -178,7 +176,7 @@ class IndexSearcher():
                 else:
                     row_content = (row["url"], None)
                 results_out.append(row_content)
-            
+ 
         return results_out
         
 
