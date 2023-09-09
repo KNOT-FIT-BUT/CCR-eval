@@ -18,6 +18,12 @@ import pickle
 import torch
 import numba
 
+# OpenAI
+from openai.embeddings_utils import get_embedding, cosine_similarity
+import pandas as pd
+import tiktoken
+
+
 from functools import partialmethod
 from tqdm import tqdm
 from time import time
@@ -74,9 +80,9 @@ class IndexSearcher():
             for key, value in self.sparse_index.index_doc_value.items():
                 self.index_doc_values[key] = value
 
-        # TODO
         elif index_type == "openaiada":
-            pass
+            self.df = pd.read_pickle(index_path)
+            self.api_key = os.getenv("OPENAI_API_KEY")
 
     def __init_bm25_searcher(self):
         self.adjust_bm25_params(self.K1, self.B)
@@ -134,7 +140,7 @@ class IndexSearcher():
         
         elif self.index_type == "splade":
             with torch.no_grad():
-                query = ["auto"]
+                query = [query]
                 processed_passage = self.tokenizer(query,
                                     add_special_tokens=True,
                                     padding="longest",  # pad to max sequence length in batch
@@ -158,17 +164,22 @@ class IndexSearcher():
                                                     size_collection=self.collection_size
                                                 )
                 filtered_indexes, scores = select_topk(filtered_indexes, scores, k=5)    
-                
 
-                if include_content and self.collection:
-                    # TODO
-                    pass
-                            
-                else:
-                    for id_ in filtered_indexes:
-                        results_out.append((id_, None))
+                # TODO return with doc_content
+                for id_ in filtered_indexes:
+                    results_out.append((id_, None))
                 
-            return results_out
+        elif self.index_type == "openaiada":
+            embedding = get_embedding(query, engine='text-embedding-ada-002', api_key=self.api_key)
+            self.df['similarities'] = self.df.embedding.apply(lambda x: cosine_similarity(x, embedding))
+            for index, row in self.df.sort_values("similarities", ascending=False).head(k).iterrows():
+                if include_content:
+                    row_content = (row["url"], row["doc"])
+                else:
+                    row_content = (row["url"], None)
+                results_out.append(row_content)
+            
+        return results_out
         
 
     def get_last_search_time(self):
