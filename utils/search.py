@@ -18,6 +18,10 @@ import pickle
 import torch
 import numba
 
+# OpenAI
+import pandas as pd
+from openai.embeddings_utils import get_embedding, cosine_similarity
+
 from functools import partialmethod
 from tqdm import tqdm
 from time import time
@@ -74,9 +78,10 @@ class IndexSearcher():
             for key, value in self.sparse_index.index_doc_value.items():
                 self.index_doc_values[key] = value
 
-        # TODO
         elif index_type == "openaiada":
-            pass
+            self.df = pd.read_pickle(index_path)
+            self.api_key = os.getenv("OPENAI_API_KEY")
+            
 
     def __init_bm25_searcher(self):
         self.adjust_bm25_params(self.K1, self.B)
@@ -167,8 +172,19 @@ class IndexSearcher():
                 else:
                     for id_ in filtered_indexes:
                         results_out.append((id_, None))
+        
+        elif self.index_type == "openaiada":
+            embedding = get_embedding(query, engine='text-embedding-ada-002', api_key=self.api_key)
+            self.df['similarities'] = self.df.embedding.apply(lambda x: cosine_similarity(x, embedding))
+            results_out = []
+            for index, row in self.df.sort_values("similarities", ascending=False).head(k).iterrows():
+                if include_content:
+                    row_data = (row["url"], row["doc"])
+                else: 
+                    row_data = (row["url"], None)
+                results_out.append(row_data)
                 
-            return results_out
+        return results_out
         
 
     def get_last_search_time(self):
