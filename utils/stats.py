@@ -66,8 +66,8 @@ class IndexStats():
             searcher.adjust_bm25_params(k1=k1, b=b)
     
         lines_count = sum(1 for line in open(query_file)) - 1
-        with open(query_file) as qrel_file:
-
+        with open(query_file) as qrel_file:   
+            top_k_data = {key: {} for key in METRICS_AT_K}
             # Skip query file header
             next(qrel_file)
 
@@ -119,6 +119,8 @@ class IndexStats():
                             
                             results = searcher.search(query=current_query, k=k, include_content=False)
                             stats[stats_key]["exec_time"][k] += searcher.get_last_search_time()
+
+                            top_k_data[k][current_query] = [url for url, doc in results] 
                         
                             total_relevant = len(relevant_docs)
                             sorted_scores = sorted(relevant_docs.values(), reverse=True)
@@ -171,4 +173,6 @@ class IndexStats():
                 stats[stats_key]["ndcg"][k] /= queries_count
                 stats[stats_key]["exec_time"][k] /= queries_count
             
+            with open(f"{self.index_type}.topk", "w") as topk_file:
+                topk_file.write(json.dumps(top_k_data, ensure_ascii=False))
             return stats[stats_key], queries_count
