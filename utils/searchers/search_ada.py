@@ -1,4 +1,5 @@
 from openai.embeddings_utils import get_embedding, cosine_similarity
+from utils.collection import load_pairs
 from time import time
 import pandas as pd
 import os
@@ -7,16 +8,19 @@ class MissingOpenAIAPIkey(Exception):
     pass
 
 class OpenAIADAIndexSearcher:
-    def __init__(self, index_path:str, api_key=None, embedding_model="text-embedding-ada-002"):
-        self.df = pd.read_pickle(index_path)
-        self.api_key = api_key if api_key else os.getenv("OPENAI_API_KEY")
+    def __init__(self, index_path:str, api_key=None, embedding_model="text-embedding-ada-002", id_url_pairs:str=None):
+        self.df = pd.read_pickle(os.path.join(index_path, os.path.basename(index_path)+".pickle"))
+        self.api_key = api_key if api_key else os.getenv("OPENAI_API_KEY")  
         self.embedding_model = embedding_model
 
         if self.api_key == None:
             raise MissingOpenAIAPIkey
+        
+        if id_url_pairs:
+            self.pairs = load_pairs(id_url_pairs)
 
 
-    def search(self, query: str, k: int = 10, include_content=True):
+    def search(self, query: str, k: int = 10, include_content=True, **kwargs):
         results_out = []
         embedding = get_embedding(query, engine=self.embedding_model, api_key=self.api_key)
 
@@ -25,7 +29,7 @@ class OpenAIADAIndexSearcher:
         self.last_search_time = time() - start_time
         
         for _, row in self.df.sort_values("similarities", ascending=False).head(k).iterrows():
-            row_content = (row["url"], row["doc"]) if include_content else (row["url"], row["doc"])
+            row_content = (row["url"], row["doc"]) if include_content else (row["url"], None)
             results_out.append(row_content)
         return results_out
     
