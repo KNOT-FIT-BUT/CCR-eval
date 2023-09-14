@@ -16,8 +16,8 @@ with open(doc_file) as df, open(trans_file) as tf, open(out_file, "w") as of:
         docs_count += 1
         print(f"Processing, docs count: {docs_count}", end="\r")
         doc_url = json.loads(doc_line)["url"]
-        trans_line = json.loads(trans_line)
-        trans_line = {"url": doc_url, **trans_line}
+        trans_doc = json.loads(trans_line)["translation"]
+        trans_line = {"url": doc_url, "doc":trans_doc}
 
         of.write(json.dumps(trans_line, ensure_ascii=False) + "\n")
     
