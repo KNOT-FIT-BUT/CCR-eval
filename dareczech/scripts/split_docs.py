@@ -43,10 +43,11 @@ with open(input_docs) as docs_in, open(output_docs, "w") as docs_out:
 
         else:
             start_idx = 0
+            end_idx = 0
             doc_idx = 1
 
             index_limit = len(tokens) if len(tokens) < TOKENIZER_MAX_SEQ_LENGHT else TOKENIZER_MAX_SEQ_LENGHT
-            while start_idx < index_limit:
+            while end_idx < len(tokens):
                 end_idx = min(start_idx + split_threshold, len(tokens))
                 doc_content = tokenizer.convert_tokens_to_string(tokens[start_idx:end_idx])
                 docs_out.write(json.dumps({
