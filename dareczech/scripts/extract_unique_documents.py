@@ -4,7 +4,7 @@ from tqdm import tqdm
 import json
 import re  
 
-from args.args_extract_unique_documents import parser
+from args.args_extract_dareczech import parser
 from utils import squash_doc_content, lines_in_file
 from dareczech_reg import DOC_BTE_REG
 
