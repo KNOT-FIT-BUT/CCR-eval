@@ -116,8 +116,7 @@ class IndexStats():
 
                         # Perform searches for top-k
                         for k in METRICS_AT_K:
-                            
-                            results = searcher.search(query=current_query, k=k, include_content=False)
+                            results = searcher.search(query=current_query, k=k, include_content=False, unique_ids=True)
                             stats[stats_key]["exec_time"][k] += searcher.get_last_search_time()
 
                             top_k_data[k][current_query] = [url for url, doc in results] 
