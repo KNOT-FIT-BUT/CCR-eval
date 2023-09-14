@@ -20,6 +20,7 @@ CCR
 !models/.gitkeep
 
 # Unwanted
+*.key
 *.csv
 *.yaml
 *.pickle
