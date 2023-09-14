@@ -36,16 +36,6 @@ parser.add_argument(
     dest="out_path"
 )
 
-
-parser.add_argument(
-    "--source-collection", 
-    required=False, 
-    default="",
-    help="Source doc collection (only for colbert)",
-    action="store",
-    dest="collection"
-)
-
 parser.add_argument(
     "--lemmatize-query",
     required=False,
@@ -78,6 +68,6 @@ parser.add_argument(
     required=False, 
     action="store", 
     default=None,
-    help="Path to id-url-pairs file (jsonl format)", 
+    help="Path to id-url-pairs file (tsv format)", 
     dest="pairs"
 )
