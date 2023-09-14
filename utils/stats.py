@@ -51,7 +51,6 @@ class IndexStats():
             self, 
             index_file:str,
             query_file:str,
-            collection:str,
             lemmatize_query:str, 
             k1:float, b:float,
             current_run:int,

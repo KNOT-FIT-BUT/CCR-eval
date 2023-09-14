@@ -44,7 +44,6 @@ if __name__ == "__main__":
             stats[(k1,b)], queries_count = index_stats.calculate_stats(
                 args.index_path,
                 args.query_file, 
-                args.collection, 
                 args.lemmatize_query, 
                 k1=k1, b=b,
                 current_run=current_run,
