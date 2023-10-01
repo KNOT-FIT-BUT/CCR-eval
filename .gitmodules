@@ -1,0 +1,3 @@
+[submodule "src/splade"]
+	path = src/splade
+	url = https://github.com/naver/splade.git
