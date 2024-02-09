@@ -97,7 +97,7 @@ class IndexStats():
                     stats[stats_key][stat_name][k] = 0.0
                             
             progress_bar_desc = f"Computing [{current_run}/{total_runs}]"
-
+            err_count = 0
             for line in tqdm(qrel_file, total=lines_count, desc=progress_bar_desc, unit="queries", disable=False):
                 data = line.split("\t")
 
@@ -110,7 +110,7 @@ class IndexStats():
                     # Perform current query search
                     if current_query:
                         queries_count += 1
-
+                        
                         if lemmatize_query:
                             current_query = self.lemmatizer.lemmatize_text(current_query)
 
@@ -118,7 +118,9 @@ class IndexStats():
                         for k in METRICS_AT_K:
                             results = searcher.search(query=current_query, k=k, include_content=False, unique_ids=True)
                             stats[stats_key]["exec_time"][k] += searcher.get_last_search_time()
-
+                            if len(results) < k:
+                                err_count += 1
+                                
                             top_k_data[k][current_query] = [url for url, doc in results] 
                         
                             total_relevant = len(relevant_docs)
@@ -171,7 +173,7 @@ class IndexStats():
                 stats[stats_key]["map"][k] /= queries_count
                 stats[stats_key]["ndcg"][k] /= queries_count
                 stats[stats_key]["exec_time"][k] /= queries_count
-            
+            print("not matching length", err_count)
             with open(f"{self.index_type}.topk", "w") as topk_file:
                 topk_file.write(json.dumps(top_k_data, ensure_ascii=False))
             return stats[stats_key], queries_count
