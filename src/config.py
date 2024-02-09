@@ -16,7 +16,7 @@ RELEVANCE_THRESHOLD = 0.0
 
 
 # Path to morpho model (for lemmatization)
-MORPHODITA_MODEL = "morphodita/czech-morfflex2.0-pdtc1.0-220710/czech-morfflex2.0-pdtc1.0-220710.tagger"
+MORPHODITA_MODEL = "../morphodita/czech-morfflex2.0-pdtc1.0-220710/czech-morfflex2.0-pdtc1.0-220710.tagger"
 
 # Grid search
 SEARCH_GRID_AT_K = 10
