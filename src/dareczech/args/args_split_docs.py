@@ -50,3 +50,13 @@ parser.add_argument(
     help="Dictionary (json) key to document id (default 'id')",
     dest="doc_id_key"
 )
+
+parser.add_argument(
+    "--truncate", 
+    required=False,
+    default=False, 
+    help="Truncate document above threshold, do not split into parts",
+    dest="truncate",
+    action="store_true"
+)
+
