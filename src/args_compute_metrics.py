@@ -23,7 +23,7 @@ parser.add_argument(
     "--index-type", 
     required=True,
     action="store",
-    help="Index type (bm25, plaidx)",
+    help="Index type",
     choices=INDEX_TYPES,
     dest="index_type"
 )
