@@ -1,5 +1,6 @@
 # Directories
 dareczech/*
+experiments/
 models/
 __pycache__/
 documents/
@@ -15,6 +16,7 @@ CCR
 .Transformers_cache
 .logs
 .vscode
+expers/
 
 # Data directories
 !models/.gitkeep
@@ -32,9 +34,15 @@ CCR
 *.stats
 *.zip
 *.log
+*.topk
+*.pt
+*.pyc
+*.swp
 
 # Testing scripts
 test*.py
+tmp.py
+temp.py
 
 # Keep
 !dareczech/scripts
