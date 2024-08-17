@@ -6,7 +6,7 @@ LOGGING_FORMAT = '%(asctime)s %(levelname)s: %(message)s'
 
 # Metrics at
 METRICS_AT_K = [5, 10, 20, 50, 100]
-INDEX_TYPES = ["bm25", "colbert", "splade", "openaiada"]
+INDEX_TYPES = ["bm25", "colbert", "splade", "openaiada", "raw_tensors"]
 
 # Default BM25 params
 K1_default, B_default = 2.0, 1.0
