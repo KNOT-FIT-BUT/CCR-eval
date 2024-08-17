@@ -72,7 +72,7 @@ if __name__ == "__main__":
             # TODO
             pass
         elif stats_format == "csv":
-            print_stats_csv(stats, METRICS_AT_K, queries_count, )
+            print_stats_csv(stats, METRICS_AT_K, queries_count, out_file)
 
 if out_file != sys.stdout:
     out_file.close()
