@@ -1,5 +1,5 @@
-from colbert.data import Collection
-import json
+# from colbert.data import Collection
+# import json
 
 def load_pairs(id_url_pairs:str) ->dict:
     with open(id_url_pairs) as pairs_file:

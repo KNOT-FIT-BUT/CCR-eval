@@ -45,17 +45,17 @@ def print_stats(stats:dict, metrics_at_k:list, queries_count:int, query_file:str
 def print_stats_csv(stats:dict, metrics_at_k:list, queries_count:int, out_file):
       for k1, b in stats.keys():
         data = stats[(k1, b)]
-        out_file.write(",".join(["@K"] + [str(val) for val in metrics_at_k]))
+        out_file.write(",".join(["@K"] + [str(val) for val in metrics_at_k]) + "\n")
         for name, values in data.items():
             line_values = [name.upper()]
             for k in metrics_at_k:
                 value = values[k]
                 # Convert exec_time to milliseconds
                 if name == "exec_time":            
-                    value = value * 10**3
-
+                    value = value * 10**3              
                 line_values.append('{:.2f}'.format(round(value, 2)))
-            out_file.write(",".join(line_values))
+                
+            out_file.write(",".join(line_values) + "\n")
 
 def print_stats_raw(stats:dict, out_file):
     out_file.write(str(stats))
