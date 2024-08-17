@@ -1,7 +1,7 @@
 from openai.embeddings_utils import get_embedding, cosine_similarity
-from utils.collection import load_pairs
 from time import time
 import pandas as pd
+import json
 import os
 
 class MissingOpenAIAPIkey(Exception):
@@ -16,13 +16,15 @@ class OpenAIADAIndexSearcher:
         if self.api_key == None:
             raise MissingOpenAIAPIkey
         
-        if id_url_pairs:
-            self.pairs = load_pairs(id_url_pairs)
 
 
     def search(self, query: str, k: int = 10, include_content=True, **kwargs):
         results_out = []
-        embedding = get_embedding(query, engine=self.embedding_model, api_key=self.api_key)
+        
+        if query.startswith("[") and query.endswith("]"):
+            embedding = json.loads(query)
+        else:
+            embedding = get_embedding(query, engine=self.embedding_model, api_key=self.api_key)
 
         start_time = time()
         self.df['similarities'] = self.df.embedding.apply(lambda x: cosine_similarity(x, embedding))
@@ -32,6 +34,30 @@ class OpenAIADAIndexSearcher:
             row_content = (row["url"], row["doc"]) if include_content else (row["url"], None)
             results_out.append(row_content)
         return results_out
+
+    # def search(self, query: str, k: int = 10, include_content=True, **kwargs):
+    #     results_out = []
+    #     embedding = get_embedding(query, engine=self.embedding_model, api_key=self.api_key)
+        
+    #     start_time = time()
+        
+    #     df_gpu = cudf.DataFrame(self.df)
+        
+    #     similarities_gpu = cuml.metrics.pairwise.cosine_similarity(df_gpu['embedding'].tolist(), [embedding])
+    #     similarities = similarities_gpu.to_array().squeeze()
+        
+    #     self.df['similarities'] = similarities
+    #     self.last_search_time = time() - start_time
+
+    #     top_k_rows = self.df.nlargest(k, 'similarities')
+        
+    #     for _, row in top_k_rows.iterrows():
+    #         row_content = (row["url"], row["doc"]) if include_content else (row["url"], None)
+    #         results_out.append(row_content)
+        
+    #     return results_out
+
+
     
     def get_last_search_time(self):
         return self.last_search_time

@@ -1,8 +1,7 @@
 from utils.searchers.splade_funcs import to_list, numba_score_float, select_topk
-from splade.datasets.datasets import CollectionDatasetPreLoad
-from splade.datasets.dataloaders import CollectionDataLoader
-from splade.models.transformer_rep import Splade, SpladeDoc
+from splade.models.transformer_rep import Splade
 from splade.indexing.inverted_index import IndexDictOfArray
+# from splade.tasks.transformer_evaluator import SparseRetrieval
 from utils.collection import load_pairs
 from transformers import AutoTokenizer
 from collections import defaultdict
@@ -15,9 +14,10 @@ import os
 
 class SpladeIndexSearcher:
     pairs = None
-    def __init__(self, index_path:str, embedding_model="naver/splade-cocondenser-selfdistil", id_url_pairs:str=None):
-        self. model = Splade(model_type_or_dir=embedding_model)
+    def __init__(self, index_path:str, embedding_model="naver/splade-cocondenser-ensembledistil", id_url_pairs:str=None):
+        self.model = Splade(model_type_or_dir=embedding_model)
         self.device =  torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.model.to(self.device)
         self.collection_size = len(pickle.load(open(os.path.join(index_path, "doc_ids.pkl"),"rb")))
         self.tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=embedding_model)
         self.sparse_index = IndexDictOfArray(index_path=index_path, dim_voc=self.model.output_dim)
@@ -43,9 +43,7 @@ class SpladeIndexSearcher:
                                     max_length=self.tokenizer.model_max_length,
                                     return_attention_mask=True)
             data =  {key: torch.tensor(val) for key, val in processed_passage.items()}
-            inputs = {key: val for key, val in data.items()}
-            for key,val in inputs.items():
-                inputs[key] = val.to(self.device)
+            inputs = {key: val.to(self.device) for key, val in data.items()}
             query = self.model(q_kwargs=inputs)["q_rep"]
             row, col = torch.nonzero(query, as_tuple=True)
             values = query[to_list(row), to_list(col)]
@@ -59,6 +57,8 @@ class SpladeIndexSearcher:
                                                 size_collection=self.collection_size
                                             )
             filtered_indexes, scores = select_topk(filtered_indexes, scores, k=k)   
+            scores_indices = np.argsort(scores)[::-1]
+            filtered_indexes, scores = filtered_indexes[scores_indices], scores[scores_indices]
 
             # TODO return with doc_content
             for id_ in filtered_indexes:
@@ -81,10 +81,24 @@ class SpladeIndexSearcher:
 
         retry = 1
         while len(results_out) != k:
+            if(retry == 2):
+                print(f"Warning: Could not retrieve {k} results for query '{query}'")
             results_out = self._retrieve_results(query, k*(retry+1), k, include_content, unique_ids)
             retry += 1
 
         return results_out
     
+    # def search(self, query: str, k: int = 10, include_content=True, unique_ids:bool=False):
+    #     # call the original splade method
+    #     results_out = []
+    #     sr = SparseRetrieval(config=None, model=self.model, dataset_name="dummy", compute_stats=False, dim_voc=self.model.output_dim)
+    #     results = sr.retrieve(query, top_k=k)
+    #     for id_, score in results:
+    #         id_ = self.pairs.get(int(id_)).split("|")[0] if self.pairs else id_
+    #         results_out.append((id_, score))
+    #     return results_out
+    
     def get_last_search_time(self):
         return self.last_search_time
+
+

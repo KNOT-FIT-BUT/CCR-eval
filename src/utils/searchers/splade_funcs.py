@@ -21,6 +21,7 @@ def numba_score_float(inverted_index_ids: numba.typed.Dict,
             for j in numba.prange(len(retrieved_indexes)):
                 scores[retrieved_indexes[j]] += query_float * retrieved_floats[j]
         filtered_indexes = np.argwhere(scores > threshold)[:, 0]  # ideally we should have a threshold to filter
+        
         # unused documents => this should be tuned, currently it is set to 0
         return filtered_indexes, -scores[filtered_indexes]
 

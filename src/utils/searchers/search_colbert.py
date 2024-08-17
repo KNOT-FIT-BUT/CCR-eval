@@ -21,7 +21,7 @@ class ColBERTIndexSearcher:
 
         for passage_id, _, _ in zip(*results):
             doc_content = self.searcher.collection[passage_id] if include_content else None
-            passage_id = self.pairs.get(int(passage_id)).split("|")[0] if self.pairs else passage_id.split("|")[0]
+            passage_id = self.pairs.get(int(passage_id)).split("|")[0] if self.pairs else passage_id
             # Skip duplicates
             if unique_ids and passage_id in retrieved_ids:
                 continue

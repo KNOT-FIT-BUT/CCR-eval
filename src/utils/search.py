@@ -18,6 +18,10 @@ class IndexSearcher:
         elif index_type == "openaiada":
             from utils.searchers.search_ada import OpenAIADAIndexSearcher
             return OpenAIADAIndexSearcher(index_path, **kwargs)
+        elif index_type == "raw_tensors":
+            from utils.searchers.raw_tensors import RawTensorsSearcher
+            # model_name="Seznam/simcse-dist-mpnet-paracrawl-cs-en" # defualt  
+            return RawTensorsSearcher(index_path, **kwargs)
     
     @abstractmethod
     def search(self, query: str, k: int = 10, include_content=True, unique_ids:bool=False):
