@@ -29,6 +29,11 @@ class ColBERTIndexSearcher:
             retrieved_ids.add(passage_id)
             if len(results_out) == k:
                 break
+        
+        if len(results_out) < k:
+            for i in range(k - len(results_out)):
+                results_out.append(("","") if self.pairs else (-1, None))
+            
         return results_out
 
     def search(self, query:str, k:int = 10, include_content:bool=True, unique_ids:bool=False):
